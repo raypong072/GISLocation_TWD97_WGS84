@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Getting Start TGOS MAP</title>
+
+<script type="text/javascript"
+
+src="http://api.tgos.nat.gov.tw/TGOS_API/tgos?ver=2&AppID=It1RbFtUaybUwWMmPeYGxE0TXBs5gApk/z0Yu9reLYXecVq5NmsvwQ==&APIKey=cGEErDNy5yN/1fQ0vyTOZrghjE+jIU6u/5VaRvFza4gIEifTUkkzx0Hqcw/E35zIizIsyPosGrCHwCEDjPidQ8shb0Sj3xruWlxly5iVb2ztoYyf2OiNftFIHWFqrRtiQ92wYumnJDT4basWUAS/wwu69pZ7VBE5gYeWcqDGPWVCRbrRsoZPIuDVIu9Pj1n7TnQkK2V9U2mgrBG3n3FvA2GX7/J1AQ+cLJ6+V2XTR65kzfaDULBUIPrab3C4em/zyg3c/8p1GxM4Vb0Tncav48LhWocQF9bzWKE0yaTBgPwlQDrGuJWqn7DGb5qXyqMokhmiY5J44FzHJtnbOZkkr3GOiIp2JGxYlHN8mh2bgC2nvuygGnKVko0pL5jpa2xXB9YtV2yxzRw=" charset="utf-8"></script>
+
+<script type="text/javascript"> 	
+	var pMap = null;
+	var messageBox = null; //訊息窗格物件
+	var addrlocate = new TGOS.TGAddress();
+	var addrMarker = null; //鄰近地址點
+	var clickMarker = null; //點擊位置點
+	var markerImg = new TGOS.TGImage("http://api.tgos.nat.gov.tw/TGOS_API/images/marker.png",
+					new TGOS.TGSize(33, 33), new TGOS.TGPoint(0, 0), new TGOS.TGPoint(16, 33));
+	var markerImg1 = new TGOS.TGImage("http://api.tgos.nat.gov.tw/TGOS_API/images/Point.png",
+					new TGOS.TGSize(32, 32), new TGOS.TGPoint(0, 0), new TGOS.TGPoint(16, 32));
+					
+	function InitWnd() {
+		var pOMap = document.getElementById("TGMap");
+		var mapOptions = {
+			mapTypeControl: false,		//mapTypeControl(關閉地圖類型控制項)
+			navigationControl: false,	//navigationControl(關閉縮放控制列)
+			scaleControl: false			//scaleControl(關閉比例尺控制項)
+		};
+		pMap = new TGOS.TGOnlineMap(pOMap, TGOS.TGCoordSys.EPSG3826, mapOptions);	//宣告TGOnlineMap地圖物件並設定坐標系統
+		pMap.setZoom(7);	//指定地圖起始層級
+		pMap.setCenter(new TGOS.TGPoint(304869, 2770502));	//指定地圖起始中心點坐標
+	}
+	
+	function xyAddr(){						
+		var px = parseFloat(document.getElementById("x").value);
+		var py = parseFloat(document.getElementById("y").value);
+		var InfoWindowOptions = {
+			maxWidth: 4000,
+            pixelOffset: { x: 0, y: 0 },
+            zIndex: 0
+        };
+		var MakerOptions = {
+			clickable: false,
+			draggable: false,
+			flat: false
+		};
+		
+			if (messageBox) {
+				messageBox.close(pMap);
+			}
+			
+			if (addrMarker != null){
+				addrMarker.setMap(null);
+			}
+			
+			if (clickMarker != null){
+				clickMarker.setMap(null);
+			}
+			
+			var addrpt = new TGOS.TGPoint(px, py);  //將滑鼠點擊位置轉為TGOS Point點資料
+			TWD97toWGS84(px,py);// 轉換座標格式 TWD97 to WGS84
+			
+			addrlocate.nearestAddress(addrpt, TGOS.TGCoordSys.EPSG3826,  //利用滑鼠點擊位置查詢最鄰近地址
+				function(result, status){
+					//console.result;
+					//var level = pMap.getZoom(); //取得目前地圖層級
+					
+					var addrcon = result.formattedAddress;  //取得最鄰近地址查詢結果
+					var addrpoint = result.geometry.location;
+					var message = "X坐標: " + px + "<br>Y坐標: " + py + "<br>鄰近地址:" + addrcon;	//組合顯示訊息
+					messageBox = new TGOS.TGInfoWindow(message, addrpt, InfoWindowOptions);	//在點擊位置上開啟訊息窗格, 並寫入坐標及地圖層級
+					messageBox.open(pMap);
+					clickMarker = new TGOS.TGMarker(pMap, addrpt, '點擊位置', markerImg1, MakerOptions);
+					addrMarker = new TGOS.TGMarker(pMap, addrpoint, '地址位置', markerImg, MakerOptions);
+					
+					document.getElementById("res").innerHTML = "<hr><h3>鄰近地址："+addrcon+"</h3>";
+				}
+			);
+	}
+	
+	function TWD97toWGS84 (X97,Y97)
+		{		    
+			var TT = new TGOS.TGTransformation();
+			TT.twd97towgs84(X97,Y97);
+			//alert(TT.transResult.x + "," +TT.transResult.y);
+			document.getElementById("lo").value = TT.transResult.x ;
+			document.getElementById("la").value = TT.transResult.y ;
+			return TT.transResult;
+		}		
+		
+	function WGS84toTWD97()
+	{
+		var TT = new TGOS.TGTransformation();
+		var X84 = document.getElementById("lo").value;
+		var Y84 = document.getElementById("la").value;
+		TT.wgs84totwd97(X84,Y84);
+		//alert(TT.transResult.x + "," +TT.transResult.y);
+		document.getElementById("x").value = TT.transResult.x ;
+		document.getElementById("y").value = TT.transResult.y ;
+		return TT.transResult;
+	}
+</script>            
+</head>
+<body style="margin:0px" onload="InitWnd();">
+	<div id="TGMap" style="width:800px; height:600px; border: 1px solid #C0C0C0;"></div>
+	<br>
+	[WGS84] - Longitude：<input type="text" id="lo" value="" />　latitude：<input type="text" id="la" value=""/><input type="button" onclick="WGS84toTWD97();" value="轉換" /><br>
+	[TWD97] - X：<input type="text" id="x" value="305510" />　Y：<input type="text" id="y" value="2770784"/><input type="button" onclick="xyAddr();" value="查詢" /><br>
+	<div id="res"></div>
+</body>
+</html> 
